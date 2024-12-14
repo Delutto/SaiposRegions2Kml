@@ -35,67 +35,24 @@ document.getElementById('uploadButton').addEventListener('click', () => {
     }
 });
 
-document.getElementById('fullscreenButton').addEventListener('click', () => {
-    const mapElement = document.getElementById('map'); // Seleciona o mapa
+document.getElementById('toKmlButton').addEventListener('click', () => {exportToKML(map);});
+
+const fullscreenButton = document.getElementById('fullscreenButton');
+fullscreenButton.addEventListener('click', () => {
     if (!document.fullscreenElement) {
-        mapElement.requestFullscreen().catch(err => {
-            alert(`Erro ao entrar no modo de tela cheia: ${err.message}`);
-        });
+        document.getElementById('map').requestFullscreen();
     } else {
         document.exitFullscreen();
     }
 });
 
-document.getElementById('toKmlButton').addEventListener('click', () => {exportToKML(map);});
-
-function processJSON(data) {
-    if (data.length < 2) {
-        alert("Erro: O JSON deve conter pelo menos 2 geometrias.");
-        return;
+document.addEventListener('fullscreenchange', () => {
+    if (document.fullscreenElement) {
+        fullscreenButton.style.display = 'none';
+    } else {
+        fullscreenButton.style.display = 'block';
     }
-
-    const serviceAreaCoords = data[0].geometry.coordinates[0].map(coord => [coord[1], coord[0]]);
-    const serviceArea = L.polygon(serviceAreaCoords, {
-        color: 'blue',
-        fillColor: 'blue',
-        fillOpacity: 0.5
-    }).addTo(map);
-    
-    areas.push({ name: data[0].properties.desc_store_district, layer: serviceArea });
-
-    addAreaCheckbox(data[0].properties.desc_store_district, serviceArea);
-
-    const establishmentCoords = data[1].geometry.coordinates;
-    const point = L.marker(establishmentCoords).addTo(map);
-    
-    map.setView([establishmentCoords[1], establishmentCoords[0]], 13); // Centraliza no marcador
-
-    const bounds = [establishmentCoords];
-
-    const radiusData = data[1].properties.radius_mode;
-    radiusData.forEach(radiusInfo => {
-        const radiusPolygon = turf.circle([establishmentCoords[1], establishmentCoords[0]], radiusInfo.radius, {
-            steps: 32,
-            units: 'kilometers'
-        });
-
-        const circleCoords = radiusPolygon.geometry.coordinates[0].map(coord => [coord[1], coord[0]]);
-        const radiusElement = L.polygon(circleCoords, {
-            color: 'red',
-            fillColor: 'red',
-            fillOpacity: 0.1
-        }).addTo(map);
-
-
-        areas.push({ name: radiusInfo.radius + ' KM - ' + radiusInfo.delivery_fee, layer: radiusElement });
-        addAreaCheckbox(radiusInfo.radius + ' KM - ' + radiusInfo.delivery_fee, radiusElement);
-
-        bounds.push(...circleCoords);
-    });
-
-    const areaBounds = L.latLngBounds(bounds);
-    map.fitBounds(areaBounds);
-}
+});
 
 function addAreaCheckbox(areaName, layer) {
     const areaList = document.getElementById('areaList');
@@ -155,7 +112,54 @@ function addAreaCheckbox(areaName, layer) {
     areaList.appendChild(listItem);
 }
 
+function processJSON(data) {
+    if (data.length < 2) {
+        alert("Erro: O JSON deve conter pelo menos 2 geometrias.");
+        return;
+    }
 
+    const serviceAreaCoords = data[0].geometry.coordinates[0].map(coord => [coord[1], coord[0]]);
+    const serviceArea = L.polygon(serviceAreaCoords, {
+        color: 'blue',
+        fillColor: 'blue',
+        fillOpacity: 0.5
+    }).addTo(map);
+    
+    areas.push({ name: data[0].properties.desc_store_district, layer: serviceArea });
+
+    addAreaCheckbox(data[0].properties.desc_store_district, serviceArea);
+
+    const establishmentCoords = data[1].geometry.coordinates;
+    const point = L.marker(establishmentCoords).addTo(map);
+    
+    map.setView([establishmentCoords[1], establishmentCoords[0]], 13); // Centraliza no marcador
+
+    const bounds = [establishmentCoords];
+
+    const radiusData = data[1].properties.radius_mode;
+    radiusData.forEach(radiusInfo => {
+        const radiusPolygon = turf.circle([establishmentCoords[1], establishmentCoords[0]], radiusInfo.radius, {
+            steps: 32,
+            units: 'kilometers'
+        });
+
+        const circleCoords = radiusPolygon.geometry.coordinates[0].map(coord => [coord[1], coord[0]]);
+        const radiusElement = L.polygon(circleCoords, {
+            color: 'red',
+            fillColor: 'red',
+            fillOpacity: 0.1
+        }).addTo(map);
+
+
+        areas.push({ name: radiusInfo.radius + ' KM - ' + radiusInfo.delivery_fee, layer: radiusElement });
+        addAreaCheckbox(radiusInfo.radius + ' KM - ' + radiusInfo.delivery_fee, radiusElement);
+
+        bounds.push(...circleCoords);
+    });
+
+    const areaBounds = L.latLngBounds(bounds);
+    map.fitBounds(areaBounds);
+}
 
 function exportToKML() {
     let kml = '<?xml version="1.0" encoding="UTF-8"?>\n';
