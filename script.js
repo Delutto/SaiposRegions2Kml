@@ -112,53 +112,67 @@ function addAreaCheckbox(areaName, layer) {
     areaList.appendChild(listItem);
 }
 
+const colorList = ['blue', 'green', 'yelow']
+
 function processJSON(data) {
     if (data.length < 2) {
         alert("Erro: O JSON deve conter pelo menos 2 geometrias.");
         return;
     }
 
-    const serviceAreaCoords = data[0].geometry.coordinates[0].map(coord => [coord[1], coord[0]]);
-    const serviceArea = L.polygon(serviceAreaCoords, {
-        color: 'blue',
-        fillColor: 'blue',
-        fillOpacity: 0.5
-    }).addTo(map);
-    
-    areas.push({ name: data[0].properties.desc_store_district, layer: serviceArea });
+    let colorIndex = 0;
+    for (const index in data)
+    {
+        const geometryType = data[index].geometry.type
+        switch (geometryType)
+        {
+            case "Polygon":
+                const serviceAreaCoords = data[index].geometry.coordinates[0].map(coord => [coord[1], coord[0]]);
+                const serviceArea = L.polygon(serviceAreaCoords, {
+                    color: colorList[colorIndex],
+                    fillColor: colorList[colorIndex],
+                    fillOpacity: 0.5
+                }).addTo(map);
+                colorIndex++;
+                
+                areas.push({ name: data[index].properties.desc_store_district, layer: serviceArea });
 
-    addAreaCheckbox(data[0].properties.desc_store_district, serviceArea);
+                addAreaCheckbox(data[index].properties.desc_store_district, serviceArea);
+                break;
+            case "Point":
+                const establishmentCoords = data[index].geometry.coordinates;
+                const point = L.marker(establishmentCoords).addTo(map);
 
-    const establishmentCoords = data[1].geometry.coordinates;
-    const point = L.marker(establishmentCoords).addTo(map);
-    
-    map.setView([establishmentCoords[1], establishmentCoords[0]], 13); // Centraliza no marcador
+                map.setView([establishmentCoords[1], establishmentCoords[0]], 13); // Centraliza no marcador
 
-    const bounds = [establishmentCoords];
+                const bounds = [establishmentCoords];
 
-    const radiusData = data[1].properties.radius_mode;
-    radiusData.forEach(radiusInfo => {
-        const radiusPolygon = turf.circle([establishmentCoords[1], establishmentCoords[0]], radiusInfo.radius, {
-            steps: 32,
-            units: 'kilometers'
-        });
+                const radiusData = data[index].properties.radius_mode;
+                radiusData.forEach(radiusInfo => {
+                    const radiusPolygon = turf.circle([establishmentCoords[1], establishmentCoords[0]], radiusInfo.radius, {
+                        steps: 32,
+                        units: 'kilometers'
+                    });
 
-        const circleCoords = radiusPolygon.geometry.coordinates[0].map(coord => [coord[1], coord[0]]);
-        const radiusElement = L.polygon(circleCoords, {
-            color: 'red',
-            fillColor: 'red',
-            fillOpacity: 0.1
-        }).addTo(map);
+                    const circleCoords = radiusPolygon.geometry.coordinates[0].map(coord => [coord[1], coord[0]]);
+                    const radiusElement = L.polygon(circleCoords, {
+                        color: 'red',
+                        fillColor: 'red',
+                        fillOpacity: 0.1
+                    }).addTo(map);
 
 
-        areas.push({ name: radiusInfo.radius + ' KM - ' + radiusInfo.delivery_fee, layer: radiusElement });
-        addAreaCheckbox(radiusInfo.radius + ' KM - ' + radiusInfo.delivery_fee, radiusElement);
+                    areas.push({ name: radiusInfo.radius + ' KM - ' + radiusInfo.delivery_fee, layer: radiusElement });
+                    addAreaCheckbox(radiusInfo.radius + ' KM - ' + radiusInfo.delivery_fee, radiusElement);
 
-        bounds.push(...circleCoords);
-    });
+                    bounds.push(...circleCoords);
+                });
 
-    const areaBounds = L.latLngBounds(bounds);
-    map.fitBounds(areaBounds);
+                const areaBounds = L.latLngBounds(bounds);
+                map.fitBounds(areaBounds);
+                break;
+        }
+    }
 }
 
 function exportToKML() {
