@@ -1,12 +1,14 @@
 let areas = [];
 
 const map = L.map('map', { editable: true }).setView([-27.634499, -48.621699], 13);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+{
     maxZoom: 19,
     attribution: '© OpenStreetMap'
 }).addTo(map);
 
-function clearMap() {
+function clearMap()
+{
     map.eachLayer(layer => {
         if (layer instanceof L.Polygon || layer instanceof L.Marker) {
             map.removeLayer(layer);
@@ -15,38 +17,53 @@ function clearMap() {
     coordinatesList = [];
 };
 
-document.getElementById('uploadButton').addEventListener('click', () => {
-    clearMap();
-    const areaList = document.getElementById('areaList');
-    areaList.innerHTML = '';
-    areas = [];
+document.getElementById('uploadButton').addEventListener('click', () =>
+{
+    document.getElementById('jsonModal').style.display = 'flex';
+    document.getElementById('jsonInput').focus();
+});
 
-    const fileInput = document.getElementById('fileInput');
-    const file = fileInput.files[0];
-    if (file) {
-        const reader = new FileReader();
-        reader.onload = function(event) {
-            const jsonData = JSON.parse(event.target.result);
-            processJSON(jsonData);
-        };
-        reader.readAsText(file);
-    } else {
-        alert('Por favor, selecione um arquivo JSON.');
+document.getElementById('cancelModalButton').addEventListener('click', () =>
+{
+    document.getElementById('jsonModal').style.display = 'none';
+    document.getElementById('jsonInput').value = '';
+});
+
+document.getElementById('processJsonButton').addEventListener('click', () =>
+{
+    const jsonInput = document.getElementById('jsonInput').value;
+
+    try
+    {
+        const jsonData = JSON.parse(jsonInput); // Tenta parsear o JSON
+        document.getElementById('jsonModal').style.display = 'none'; // Fecha a modal
+        document.getElementById('jsonInput').value = ''; // Limpa o campo
+
+        clearMap();
+        document.getElementById('areaList').innerHTML = '';
+        areas = [];
+        processJSON(jsonData);
+    } catch (error)
+    {
+        alert('Erro ao processar o JSON: Verifique a sintaxe.');
     }
 });
 
 document.getElementById('toKmlButton').addEventListener('click', () => {exportToKML(map);});
 
 const fullscreenButton = document.getElementById('fullscreenButton');
-fullscreenButton.addEventListener('click', () => {
-    if (!document.fullscreenElement) {
+fullscreenButton.addEventListener('click', () =>
+{
+    if (!document.fullscreenElement)
+    {
         document.getElementById('map').requestFullscreen();
     } else {
         document.exitFullscreen();
     }
 });
 
-document.addEventListener('fullscreenchange', () => {
+document.addEventListener('fullscreenchange', () =>
+{
     if (document.fullscreenElement) {
         fullscreenButton.style.display = 'none';
     } else {
@@ -54,7 +71,8 @@ document.addEventListener('fullscreenchange', () => {
     }
 });
 
-function addAreaCheckbox(areaName, layer) {
+function addAreaCheckbox(areaName, layer)
+{
     const areaList = document.getElementById('areaList');
     const listItem = document.createElement('li');
     listItem.className = 'area-item';
@@ -67,13 +85,16 @@ function addAreaCheckbox(areaName, layer) {
     const checkbox = document.createElement('input');
     checkbox.type = 'checkbox';
     checkbox.checked = true;
-    checkbox.onchange = function() {
-        if (this.checked) {
+    checkbox.onchange = function()
+    {
+        if (this.checked)
+        {
             map.addLayer(layer);
             editButton.style.display = 'inline-block';
             editButton.textContent = 'Editar';
             editButton.disabled = false;
-        } else {
+        } else
+        {
             map.removeLayer(layer);
             layer.disableEdit();
             editButton.disabled = true;
@@ -86,11 +107,14 @@ function addAreaCheckbox(areaName, layer) {
     editButton.style.marginLeft = '10px';
     editButton.style.cursor = 'pointer';
     editButton.style.display = 'inline-block';
-    editButton.onclick = function() {
-        if (layer.editEnabled()) {
+    editButton.onclick = function()
+    {
+        if (layer.editEnabled())
+        {
             layer.disableEdit();
             editButton.textContent = 'Editar';
-        } else {
+        } else
+        {
             layer.enableEdit();
             editButton.textContent = 'OK';
         }
@@ -102,8 +126,10 @@ function addAreaCheckbox(areaName, layer) {
 
     listItem.appendChild(listItemContent);
 
-    listItem.addEventListener('click', () => {
-        document.querySelectorAll('.area-item').forEach(item => {
+    listItem.addEventListener('click', () =>
+    {
+        document.querySelectorAll('.area-item').forEach(item =>
+        {
             item.classList.remove('selected');
         });
         listItem.classList.add('selected');
@@ -112,14 +138,10 @@ function addAreaCheckbox(areaName, layer) {
     areaList.appendChild(listItem);
 }
 
-const colorList = ['blue', 'green', 'yelow']
+const colorList = ['blue', 'green', 'yellow']
 
-function processJSON(data) {
-    if (data.length < 2) {
-        alert("Erro: O JSON deve conter pelo menos 2 geometrias.");
-        return;
-    }
-
+function processJSON(data)
+{
     let colorIndex = 0;
     for (const index in data)
     {
@@ -128,6 +150,7 @@ function processJSON(data) {
         {
             case "Polygon":
                 const serviceAreaCoords = data[index].geometry.coordinates[0].map(coord => [coord[1], coord[0]]);
+                const color = colorList[colorIndex % colorList.length];
                 const serviceArea = L.polygon(serviceAreaCoords, {
                     color: colorList[colorIndex],
                     fillColor: colorList[colorIndex],
@@ -148,14 +171,16 @@ function processJSON(data) {
                 const bounds = [establishmentCoords];
 
                 const radiusData = data[index].properties.radius_mode;
-                radiusData.forEach(radiusInfo => {
-                    const radiusPolygon = turf.circle([establishmentCoords[1], establishmentCoords[0]], radiusInfo.radius, {
+                radiusData.forEach(radiusInfo =>
+                {
+                    const radiusPolygon = turf.circle([establishmentCoords[1], establishmentCoords[0]], radiusInfo.radius,
+                    {
                         steps: 32,
-                        units: 'kilometers'
-                    });
+                        units: 'kilometers'});
 
                     const circleCoords = radiusPolygon.geometry.coordinates[0].map(coord => [coord[1], coord[0]]);
-                    const radiusElement = L.polygon(circleCoords, {
+                    const radiusElement = L.polygon(circleCoords,
+                    {
                         color: 'red',
                         fillColor: 'red',
                         fillOpacity: 0.1
@@ -182,13 +207,16 @@ function exportToKML() {
     kml += '    <name>Áreas</name>\n';
     kml += '    <description>Descrição das áreas</description>\n';
 
-    map.eachLayer((layer) => {
-        if (layer instanceof L.Polygon) {
+    map.eachLayer((layer) =>
+    {
+        if (layer instanceof L.Polygon)
+        {
             const index = areas.findIndex(area => area.layer === layer);
             if (index === -1) return;
 
             const checkbox = document.querySelectorAll('.area-item input[type="checkbox"]')[index];
-            if (checkbox && checkbox.checked) {
+            if (checkbox && checkbox.checked)
+            {
                 const areaName = areas[index].name;
 
                 const latlngs = layer.getLatLngs()[0];

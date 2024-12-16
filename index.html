@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Importar JSON e Gerar Mapa</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
     <link rel="stylesheet" href="styles.css" />
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
@@ -12,24 +13,27 @@
     <script src="script.js" defer></script>
 </head>
 <body>
-    <h1>Importar JSON e Gerar Mapa</h1>
     <div id="controls">
-        <input type="file" id="fileInput" />
         <div class="upload-container">
-            <label for="fileInput" class="button">
-                <span>Upload JSON</span>
-            </label>
-            <input type="file" id="fileInput" />
-            <button id="uploadButton" class="button">Carregar JSON</button>
+            <button id="uploadButton" class="button">Carregar Objeto</button>
         </div>
     </div>
     <div id="main-container">
         <div id="sidebar">
-            <h3>Áreas</h3>
             <ul id="areaList"></ul>
         </div>
         <div id="map">
             <button id="fullscreenButton" class="button map-button">Tela Cheia</button>
+        </div>
+    </div>
+    <div id="jsonModal" class="modal">
+        <div class="modal-content">
+            <h2>Objeto Saipos</h2>
+            <textarea id="jsonInput" placeholder="Cole aqui o objeto" rows="10" style="width: 100%;"></textarea>
+            <div class="modal-buttons">
+                <button id="cancelModalButton" class="button">Cancelar</button>
+                <button id="processJsonButton" class="button">OK</button>
+            </div>
         </div>
     </div>
     <button id="toKmlButton" class="button footer-button">Exportar para KML</button>
