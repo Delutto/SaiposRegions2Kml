@@ -127,11 +127,16 @@ function processJSON(data) {
     const writer = new jsts.io.GeoJSONWriter();
 
     // 1. Encontrar TODAS as áreas de serviço principais
-    const mainAreaFeatures = data.filter(f => f.geometry && f.geometry.type === "Polygon" && f.properties.custom_layers);
+    const mainAreaFeatures = data.filter(f => f.geometry && (f.geometry.type === "Polygon" || f.geometry.type === "MultiPolygon") && f.properties.custom_layers);
     const pointFeature = data.find(f => f.geometry && f.geometry.type === "Point");
 
-    if (mainAreaFeatures.length === 0 || !pointFeature) {
-        alert("Não foi possível encontrar áreas de serviço ou o ponto de origem no JSON.");
+    if (mainAreaFeatures.length === 0) {
+        alert("Não foi possível encontrar áreas de serviço no JSON.");
+        return;
+    }
+
+    if (!pointFeature) {
+        alert("Não foi possível encontrar o ponto de origem no JSON.");
         return;
     }
 
@@ -253,7 +258,7 @@ function exportToKML() {
         const checkbox = document.querySelectorAll('.area-item input[type="checkbox"]')[index];
         if (area.layer instanceof L.Polygon && checkbox && checkbox.checked) {
             const latlngs = area.layer.getLatLngs();
-            const isMulti = area.layer.getLatLngs().length > 1 && Array.isArray(area.layer.getLatLngs()[0][0]);
+            const isMulti = Array.isArray(latlngs[0]) && Array.isArray(latlngs[0][0]);
             const polygons = isMulti ? latlngs : [latlngs];
             
             polygons.forEach(polygonRings => {
