@@ -127,6 +127,7 @@ function processJSON(data) {
     const writer = new jsts.io.GeoJSONWriter();
 
     // 1. Encontrar TODAS as áreas de serviço principais
+    // NEW: Adicionado suporte a MultiPolygons
     const mainAreaFeatures = data.filter(f => f.geometry && (f.geometry.type === "Polygon" || f.geometry.type === "MultiPolygon") && f.properties.custom_layers);
     const pointFeature = data.find(f => f.geometry && f.geometry.type === "Point");
 
@@ -195,6 +196,7 @@ function processJSON(data) {
     // }
     
     // 5. Processar o Ponto de Origem e Raios contra a área combinada
+    // ToDo: A Saipos alterou algo e o tenho que descobrir onde colocaram as coordenadas da loja...
     const centerLatLng = pointFeature.geometry.coordinates;
     const centerLngLat = [centerLatLng[1], centerLatLng[0]];
     L.marker(centerLatLng).addTo(map);
